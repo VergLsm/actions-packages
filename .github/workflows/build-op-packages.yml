@@ -1,0 +1,140 @@
+name: Build Packages
+
+on:
+  workflow_dispatch:
+
+env:
+  OP_VER: 19.07.3
+  N2N_REPO_URL: https://github.com/ntop/n2n.git
+  N2N_VER: 2.8.0
+  N2N_REPO_BRANCH: 2.8-stable
+  CONFIG_FILE: .config
+  ARCH_MT7620: ramips-mt7620
+  ARCH_MT7621: ramips-mt7621
+  ARCH_ATH79:  ath79-tiny
+  DIR_SDK_MT7620: openwrt-sdk-19.07.3-ramips-mt7620_gcc-7.5.0_musl.Linux-x86_64
+  DIR_SDK_MT7621: openwrt-sdk-19.07.3-ramips-mt7621_gcc-7.5.0_musl.Linux-x86_64
+  DIR_SDK_ATH79:  openwrt-sdk-19.07.3-ath79-tiny_gcc-7.5.0_musl.Linux-x86_64
+
+jobs:
+  build_packages:
+    runs-on: ubuntu-latest
+    if: github.event.repository.owner.id == github.event.sender.id
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@main
+    - name: Clone source code
+      run: |
+        df -hT $PWD
+        git clone --depth 1 ${{ env.N2N_REPO_URL }} -b ${{ env.N2N_REPO_BRANCH }}
+        # git clone --depth 1 https://github.com/coolsnowwolf/lede.git
+        git clone --depth 1 https://github.com/MeIsReallyBa/k2p-openwrt-mt7615_5.0.2.0.git
+    - name: Download sdk
+      run: |
+        df -hT $PWD
+        wget https://downloads.openwrt.org/releases/${{ env.OP_VER }}/targets/ramips/mt7620/$DIR_SDK_MT7620.tar.xz
+        tar -xf ${{ env.DIR_SDK_MT7620 }}.tar.xz
+        ln -sf $PWD/n2n/packages/openwrt $PWD/${{ env.DIR_SDK_MT7620 }}/package/n2n
+        wget https://downloads.openwrt.org/releases/${{ env.OP_VER }}/targets/ramips/mt7621/$DIR_SDK_MT7621.tar.xz
+        tar -xf ${{ env.DIR_SDK_MT7621 }}.tar.xz
+        ln -sf $PWD/n2n/packages/openwrt $PWD/${{ env.DIR_SDK_MT7621 }}/package/n2n
+        wget https://downloads.openwrt.org/releases/${{ env.OP_VER }}/targets/ath79/tiny/$DIR_SDK_ATH79.tar.xz
+        tar -xf ${{ env.DIR_SDK_ATH79 }}.tar.xz
+        ln -sf $PWD/n2n/packages/openwrt $PWD/${{ env.DIR_SDK_ATH79 }}/package/n2n
+        ls -al
+    - name: Build ipk
+      run: |
+        cd ${{ env.DIR_SDK_MT7620 }}
+        make defconfig
+        make package/n2n/compile V=s -j$(nproc)
+        cp $(find . -name n2n-edge_*.ipk) ../n2n-edge_${{ env.N2N_VER }}_${{ env.ARCH_MT7620 }}_${{ env.OP_VER }}.ipk
+        cd ..
+        echo ===============================
+        cd ${{ env.DIR_SDK_MT7621 }}
+        # ln -s ../../lede/package/lean/mt package/
+        ln -s ../../k2p-openwrt-mt7615_5.0.2.0/mtk package/
+        ./scripts/feeds update luci
+        cp ../diffconfig_k2p .config
+        make defconfig
+        # make package/luci-app-mtwifi/compile V=s -j$(nproc)
+        make package/mtk-luci-plugin/compile V=s -j$(nproc)
+        make package/mt_wifi/compile V=s -j$(nproc)
+        # cp $(find bin -name luci-app-mtwifi*.ipk) ../luci-app-mtwifi_${{ env.ARCH_MT7621 }}_${{ env.OP_VER }}.ipk
+        # cp $(find bin -name mt_wifi*.ipk) ../mt_wifi_${{ env.ARCH_MT7621 }}_${{ env.OP_VER }}.ipk
+        cp $(find bin -name mtk-luci-plugin*.ipk) ../mtk-luci-plugin_${{ env.ARCH_MT7621 }}_${{ env.OP_VER }}.ipk
+        cp $(find bin -name wifi-l1profile*.ipk) ../wifi-l1profile_${{ env.ARCH_MT7621 }}_${{ env.OP_VER }}.ipk
+        cp $(find bin -name kmod-mt_wifi*.ipk) ../kmod-mt_wifi_${{ env.ARCH_MT7621 }}_${{ env.OP_VER }}.ipk
+        make package/n2n/compile V=s -j$(nproc)
+        cp $(find . -name n2n-edge_*.ipk) ../n2n-edge_${{ env.N2N_VER }}_${{ env.ARCH_MT7621 }}_${{ env.OP_VER }}.ipk
+        cd ..
+        echo ===============================
+        cd ${{ env.DIR_SDK_ATH79 }}
+        make defconfig
+        make package/n2n/compile V=s -j$(nproc)
+        cp $(find . -name n2n-edge_*.ipk) ../n2n-edge_${{ env.N2N_VER }}_${{ env.ARCH_ATH79 }}_${{ env.OP_VER }}.ipk
+        cd ..
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@main
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: package_${{ env.OP_VER }}
+        release_name: package_${{ env.OP_VER }}
+        draft: false
+        prerelease: false
+    - name: Upload Release Asset
+      uses: actions/upload-release-asset@main
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
+        asset_path: n2n-edge_${{ env.N2N_VER }}_${{ env.ARCH_MT7620 }}_${{ env.OP_VER }}.ipk
+        asset_name: n2n-edge_${{ env.N2N_VER }}_${{ env.ARCH_MT7620 }}_${{ env.OP_VER }}.ipk
+        asset_content_type: application/ipk
+    - name: Upload Release Asset
+      uses: actions/upload-release-asset@main
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
+        asset_path: n2n-edge_${{ env.N2N_VER }}_${{ env.ARCH_MT7621 }}_${{ env.OP_VER }}.ipk
+        asset_name: n2n-edge_${{ env.N2N_VER }}_${{ env.ARCH_MT7621 }}_${{ env.OP_VER }}.ipk
+        asset_content_type: application/ipk
+    - name: Upload Release Asset
+      uses: actions/upload-release-asset@main
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
+        asset_path: n2n-edge_${{ env.N2N_VER }}_${{ env.ARCH_ATH79 }}_${{ env.OP_VER }}.ipk
+        asset_name: n2n-edge_${{ env.N2N_VER }}_${{ env.ARCH_ATH79 }}_${{ env.OP_VER }}.ipk
+        asset_content_type: application/ipk
+    - name: Upload Release Asset
+      uses: actions/upload-release-asset@main
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
+        asset_path: mtk-luci-plugin_${{ env.ARCH_MT7621 }}_${{ env.OP_VER }}.ipk
+        asset_name: mtk-luci-plugin_${{ env.ARCH_MT7621 }}_${{ env.OP_VER }}.ipk
+        asset_content_type: application/ipk
+    - name: Upload Release Asset
+      uses: actions/upload-release-asset@main
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
+        asset_path: wifi-l1profile_${{ env.ARCH_MT7621 }}_${{ env.OP_VER }}.ipk
+        asset_name: wifi-l1profile_${{ env.ARCH_MT7621 }}_${{ env.OP_VER }}.ipk
+        asset_content_type: application/ipk
+    - name: Upload Release Asset
+      uses: actions/upload-release-asset@main
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
+        asset_path: kmod-mt_wifi_${{ env.ARCH_MT7621 }}_${{ env.OP_VER }}.ipk
+        asset_name: kmod-mt_wifi_${{ env.ARCH_MT7621 }}_${{ env.OP_VER }}.ipk
+        asset_content_type: application/ipk

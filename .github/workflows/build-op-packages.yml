@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
 
 env:
-  OP_VER: 19.07.4
+  OP_VER: 19.07.5
   N2N_REPO_URL: https://github.com/ntop/n2n.git
   N2N_VER: 2.8.0
   N2N_REPO_BRANCH: 2.8-stable
@@ -12,9 +12,9 @@ env:
   ARCH_MT7620: ramips-mt7620
   ARCH_MT7621: ramips-mt7621
   ARCH_ATH79:  ath79-tiny
-  DIR_SDK_MT7620: openwrt-sdk-19.07.4-ramips-mt7620_gcc-7.5.0_musl.Linux-x86_64
-  DIR_SDK_MT7621: openwrt-sdk-19.07.4-ramips-mt7621_gcc-7.5.0_musl.Linux-x86_64
-  DIR_SDK_ATH79:  openwrt-sdk-19.07.4-ath79-tiny_gcc-7.5.0_musl.Linux-x86_64
+  DIR_SDK_MT7620: openwrt-sdk-19.07.5-ramips-mt7620_gcc-7.5.0_musl.Linux-x86_64
+  DIR_SDK_MT7621: openwrt-sdk-19.07.5-ramips-mt7621_gcc-7.5.0_musl.Linux-x86_64
+  DIR_SDK_ATH79:  openwrt-sdk-19.07.5-ath79-tiny_gcc-7.5.0_musl.Linux-x86_64
 
 jobs:
   build_packages:

@@ -5,10 +5,8 @@ on:
 
 env:
   OP_VER: 19.07.5
-  N2N_REPO_URL: https://github.com/ntop/n2n.git
   N2N_VER: 2.8.0
   N2N_REPO_BRANCH: 2.8-stable
-  CONFIG_FILE: .config
   ARCH_MT7620: ramips-mt7620
   ARCH_MT7621: ramips-mt7621
   ARCH_ATH79:  ath79-tiny
@@ -27,9 +25,9 @@ jobs:
     - name: Clone source code
       run: |
         df -hT $PWD
-        git clone --depth 1 ${{ env.N2N_REPO_URL }} -b ${{ env.N2N_REPO_BRANCH }}
-        # git clone --depth 1 https://github.com/coolsnowwolf/lede.git
-        git clone --depth 1 https://github.com/MeIsReallyBa/k2p-openwrt-mt7615_5.0.2.0.git
+        git clone --depth=1 https://github.com/ntop/n2n.git -b ${{ env.N2N_REPO_BRANCH }}
+        # git clone --depth=1 https://github.com/coolsnowwolf/lede.git
+        git clone --depth=1 https://github.com/MeIsReallyBa/k2p-openwrt-mt7615_5.0.2.0.git
     - name: Download sdk
       run: |
         df -hT $PWD

@@ -5,14 +5,14 @@ on:
 
 env:
   BUILD_VER: 1
-  OP_VER: 19.07.6
+  OP_VER: 19.07.7
   N2N_REPO_BRANCH: 2.8-stable
   ARCH_MT7620: ramips-mt7620
   ARCH_MT7621: ramips-mt7621
   ARCH_ATH79:  ath79-tiny
-  DIR_SDK_MT7620: openwrt-sdk-19.07.6-ramips-mt7620_gcc-7.5.0_musl.Linux-x86_64
-  DIR_SDK_MT7621: openwrt-sdk-19.07.6-ramips-mt7621_gcc-7.5.0_musl.Linux-x86_64
-  DIR_SDK_ATH79:  openwrt-sdk-19.07.6-ath79-tiny_gcc-7.5.0_musl.Linux-x86_64
+  DIR_SDK_MT7620: openwrt-sdk-19.07.7-ramips-mt7620_gcc-7.5.0_musl.Linux-x86_64
+  DIR_SDK_MT7621: openwrt-sdk-19.07.7-ramips-mt7621_gcc-7.5.0_musl.Linux-x86_64
+  DIR_SDK_ATH79:  openwrt-sdk-19.07.7-ath79-tiny_gcc-7.5.0_musl.Linux-x86_64
 
 jobs:
   build_packages:

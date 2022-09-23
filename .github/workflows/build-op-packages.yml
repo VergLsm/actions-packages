@@ -5,14 +5,14 @@ on:
 
 env:
   BUILD_VER: 1
-  OP_VER: 19.07.7
-  N2N_REPO_BRANCH: 2.8-stable
+  OP_VER: 22.03.0
+  N2N_REPO_BRANCH: 3.0-stable
   ARCH_MT7620: ramips-mt7620
   ARCH_MT7621: ramips-mt7621
   ARCH_ATH79:  ath79-tiny
-  DIR_SDK_MT7620: openwrt-sdk-19.07.7-ramips-mt7620_gcc-7.5.0_musl.Linux-x86_64
-  DIR_SDK_MT7621: openwrt-sdk-19.07.7-ramips-mt7621_gcc-7.5.0_musl.Linux-x86_64
-  DIR_SDK_ATH79:  openwrt-sdk-19.07.7-ath79-tiny_gcc-7.5.0_musl.Linux-x86_64
+  DIR_SDK_MT7620: openwrt-sdk-22.03.0-ramips-mt7620_gcc-11.2.0_musl.Linux-x86_64
+  DIR_SDK_MT7621: openwrt-sdk-22.03.0-ramips-mt7621_gcc-11.2.0_musl.Linux-x86_64
+  DIR_SDK_ATH79:  openwrt-sdk-22.03.0-ath79-tiny_gcc-11.2.0_musl.Linux-x86_64
 
 jobs:
   build_packages:
@@ -27,7 +27,7 @@ jobs:
         df -hT $PWD
         git clone --depth=1 https://github.com/VergLsm/n2n.git -b ${{ env.N2N_REPO_BRANCH }}
         # git clone --depth=1 https://github.com/coolsnowwolf/lede.git
-        git clone --depth=1 https://github.com/MeIsReallyBa/k2p-openwrt-mt7615_5.0.2.0.git
+        # git clone --depth=1 https://github.com/MeIsReallyBa/k2p-openwrt-mt7615_5.0.2.0.git
     - name: Download sdk
       run: |
         df -hT $PWD
@@ -50,19 +50,20 @@ jobs:
         cd ..
         echo ===============================
         cd ${{ env.DIR_SDK_MT7621 }}
-        # ln -s ../../lede/package/lean/mt package/
-        ln -s ../../k2p-openwrt-mt7615_5.0.2.0/mtk package/
-        ./scripts/feeds update luci
-        cp ../diffconfig_k2p .config
+        # # ln -s ../../lede/package/lean/mt package/
+        # ln -s ../../k2p-openwrt-mt7615_5.0.2.0/mtk package/
+        # ./scripts/feeds update luci
+        ./scripts/feeds update -a
+        # cp ../diffconfig_k2p .config
         make defconfig
-        # make package/luci-app-mtwifi/compile V=s -j$(nproc)
-        make package/mtk-luci-plugin/compile V=s -j$(nproc)
-        make package/mt_wifi/compile V=s -j$(nproc)
-        # cp $(find bin -name luci-app-mtwifi*.ipk) ../luci-app-mtwifi_${{ env.ARCH_MT7621 }}_${{ env.OP_VER }}_${{ env.BUILD_VER }}.ipk
-        # cp $(find bin -name mt_wifi*.ipk) ../mt_wifi_${{ env.ARCH_MT7621 }}_${{ env.OP_VER }}_${{ env.BUILD_VER }}.ipk
-        cp $(find bin -name mtk-luci-plugin*.ipk) ../mtk-luci-plugin_${{ env.ARCH_MT7621 }}_${{ env.OP_VER }}_${{ env.BUILD_VER }}.ipk
-        cp $(find bin -name wifi-l1profile*.ipk) ../wifi-l1profile_${{ env.ARCH_MT7621 }}_${{ env.OP_VER }}_${{ env.BUILD_VER }}.ipk
-        cp $(find bin -name kmod-mt_wifi*.ipk) ../kmod-mt_wifi_${{ env.ARCH_MT7621 }}_${{ env.OP_VER }}_${{ env.BUILD_VER }}.ipk
+        # # make package/luci-app-mtwifi/compile V=s -j$(nproc)
+        # make package/mtk-luci-plugin/compile V=s -j$(nproc)
+        # make package/mt_wifi/compile V=s -j$(nproc)
+        # # cp $(find bin -name luci-app-mtwifi*.ipk) ../luci-app-mtwifi_${{ env.ARCH_MT7621 }}_${{ env.OP_VER }}_${{ env.BUILD_VER }}.ipk
+        # # cp $(find bin -name mt_wifi*.ipk) ../mt_wifi_${{ env.ARCH_MT7621 }}_${{ env.OP_VER }}_${{ env.BUILD_VER }}.ipk
+        # cp $(find bin -name mtk-luci-plugin*.ipk) ../mtk-luci-plugin_${{ env.ARCH_MT7621 }}_${{ env.OP_VER }}_${{ env.BUILD_VER }}.ipk
+        # cp $(find bin -name wifi-l1profile*.ipk) ../wifi-l1profile_${{ env.ARCH_MT7621 }}_${{ env.OP_VER }}_${{ env.BUILD_VER }}.ipk
+        # cp $(find bin -name kmod-mt_wifi*.ipk) ../kmod-mt_wifi_${{ env.ARCH_MT7621 }}_${{ env.OP_VER }}_${{ env.BUILD_VER }}.ipk
         make package/n2n/compile V=s -j$(nproc)
         cp $(find . -name n2n-edge_*.ipk) ../n2n-edge_${{ env.N2N_REPO_BRANCH }}_${{ env.ARCH_MT7621 }}_${{ env.OP_VER }}_${{ env.BUILD_VER }}.ipk
         cd ..

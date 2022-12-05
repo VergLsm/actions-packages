@@ -1,18 +1,19 @@
-name: Build Packages
+name: Build OP Packages
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - op-packages
 
 env:
   BUILD_VER: 1
-  OP_VER: 22.03.0
-  N2N_REPO_BRANCH: 3.0-stable
+  OP_VER: 22.03.2
+  N2N_REPO_BRANCH: 3.1.1
+  GCC_VERSION: 11.2.0
   ARCH_MT7620: ramips-mt7620
   ARCH_MT7621: ramips-mt7621
   ARCH_ATH79:  ath79-tiny
-  DIR_SDK_MT7620: openwrt-sdk-22.03.0-ramips-mt7620_gcc-11.2.0_musl.Linux-x86_64
-  DIR_SDK_MT7621: openwrt-sdk-22.03.0-ramips-mt7621_gcc-11.2.0_musl.Linux-x86_64
-  DIR_SDK_ATH79:  openwrt-sdk-22.03.0-ath79-tiny_gcc-11.2.0_musl.Linux-x86_64
 
 jobs:
   build_packages:
@@ -22,26 +23,41 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@main
+    - uses: fufuhu/get-commit-id@main
+      with:
+        path: ./
+    - name: Check commit ids
+      run: |
+        echo "COMMIT ID:" ${{ steps.get_commit_id.outputs.commit_id }}
+        echo "SHORT COMMIT ID:" ${{ steps.get_commit_id.outputs.short_commit_id }}
     - name: Clone source code
       run: |
         df -hT $PWD
-        git clone --depth=1 https://github.com/VergLsm/n2n.git -b ${{ env.N2N_REPO_BRANCH }}
+        git clone -b ${{ env.N2N_REPO_BRANCH }} --depth=1 https://github.com/VergLsm/n2n.git
         # git clone --depth=1 https://github.com/coolsnowwolf/lede.git
         # git clone --depth=1 https://github.com/MeIsReallyBa/k2p-openwrt-mt7615_5.0.2.0.git
     - name: Download sdk
+      env:
+        DIR_SDK_MT7620: openwrt-sdk-${{ env.OP_VER }}-${{ env.ARCH_MT7620 }}_gcc-${{ env.GCC_VERSION }}_musl.Linux-x86_64
+        DIR_SDK_MT7621: openwrt-sdk-${{ env.OP_VER }}-${{ env.ARCH_MT7621 }}_gcc-${{ env.GCC_VERSION }}_musl.Linux-x86_64
+        DIR_SDK_ATH79:  openwrt-sdk-${{ env.OP_VER }}-${{ env.ARCH_ATH79 }}_gcc-${{ env.GCC_VERSION }}_musl.Linux-x86_64
       run: |
         df -hT $PWD
-        wget https://downloads.openwrt.org/releases/${{ env.OP_VER }}/targets/ramips/mt7620/$DIR_SDK_MT7620.tar.xz
+        wget -q https://downloads.openwrt.org/releases/${{ env.OP_VER }}/targets/ramips/mt7620/$DIR_SDK_MT7620.tar.xz
         tar -xf ${{ env.DIR_SDK_MT7620 }}.tar.xz
         ln -sf $PWD/n2n/packages/openwrt $PWD/${{ env.DIR_SDK_MT7620 }}/package/n2n
-        wget https://downloads.openwrt.org/releases/${{ env.OP_VER }}/targets/ramips/mt7621/$DIR_SDK_MT7621.tar.xz
+        wget -q https://downloads.openwrt.org/releases/${{ env.OP_VER }}/targets/ramips/mt7621/$DIR_SDK_MT7621.tar.xz
         tar -xf ${{ env.DIR_SDK_MT7621 }}.tar.xz
         ln -sf $PWD/n2n/packages/openwrt $PWD/${{ env.DIR_SDK_MT7621 }}/package/n2n
-        wget https://downloads.openwrt.org/releases/${{ env.OP_VER }}/targets/ath79/tiny/$DIR_SDK_ATH79.tar.xz
+        wget -q https://downloads.openwrt.org/releases/${{ env.OP_VER }}/targets/ath79/tiny/$DIR_SDK_ATH79.tar.xz
         tar -xf ${{ env.DIR_SDK_ATH79 }}.tar.xz
         ln -sf $PWD/n2n/packages/openwrt $PWD/${{ env.DIR_SDK_ATH79 }}/package/n2n
         ls -al
     - name: Build ipk
+      env:
+        DIR_SDK_MT7620: openwrt-sdk-${{ env.OP_VER }}-${{ env.ARCH_MT7620 }}_gcc-${{ env.GCC_VERSION }}_musl.Linux-x86_64
+        DIR_SDK_MT7621: openwrt-sdk-${{ env.OP_VER }}-${{ env.ARCH_MT7621 }}_gcc-${{ env.GCC_VERSION }}_musl.Linux-x86_64
+        DIR_SDK_ATH79:  openwrt-sdk-${{ env.OP_VER }}-${{ env.ARCH_ATH79 }}_gcc-${{ env.GCC_VERSION }}_musl.Linux-x86_64
       run: |
         cd ${{ env.DIR_SDK_MT7620 }}
         make defconfig

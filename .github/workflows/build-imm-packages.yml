@@ -7,7 +7,7 @@ on:
       - imm-packages
 
 env:
-  IMM_VER: 23.05.0-rc3
+  IMM_VER: 23.05.2
   N2N_REPO_BRANCH: 3.1.1
   GCC_VERSION: 12.3.0
   ARCH_MT7981B: mediatek-filogic

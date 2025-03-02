@@ -1,4 +1,4 @@
-name: Build OP Packages
+name: Build N2N IPK
 
 on:
   workflow_dispatch:
@@ -7,9 +7,9 @@ on:
       - op-packages
 
 env:
-  OP_VER: 23.05.3
+  OP_VER: 24.10.0
   N2N_REPO_BRANCH: 3.1.1
-  GCC_VERSION: 12.3.0
+  GCC_VERSION: 13.3.0
   ARCH_MT_FILOGIC: mediatek-filogic
   ARCH_MT7620: ramips-mt7620
   ARCH_MT7621: ramips-mt7621
@@ -40,21 +40,21 @@ jobs:
         DIR_SDK_ATH79:  openwrt-sdk-${{ env.OP_VER }}-${{ env.ARCH_ATH79 }}_gcc-${{ env.GCC_VERSION }}_musl.Linux-x86_64
       run: |
         df -hT $PWD
-        wget -q https://downloads.openwrt.org/releases/${{ env.OP_VER }}/targets/mediatek/filogic/$DIR_SDK_MT_FILOGIC.tar.xz
-        tar -xf ${{ env.DIR_SDK_MT_FILOGIC }}.tar.xz
-        ln -sf $PWD/n2n/packages/openwrt $PWD/${{ env.DIR_SDK_MT_FILOGIC }}/package/n2n
+        wget -q https://downloads.openwrt.org/releases/${{ env.OP_VER }}/targets/mediatek/filogic/${{ env.DIR_SDK_MT_FILOGIC }}.tar.zst
+        tar -xf ${{ env.DIR_SDK_MT_FILOGIC }}.tar.zst
+        cp -r $PWD/n2n/packages/openwrt $PWD/${{ env.DIR_SDK_MT_FILOGIC }}/package/n2n
 
-        wget -q https://downloads.openwrt.org/releases/${{ env.OP_VER }}/targets/ramips/mt7620/$DIR_SDK_MT7620.tar.xz
-        tar -xf ${{ env.DIR_SDK_MT7620 }}.tar.xz
-        ln -sf $PWD/n2n/packages/openwrt $PWD/${{ env.DIR_SDK_MT7620 }}/package/n2n
+        wget -q https://downloads.openwrt.org/releases/${{ env.OP_VER }}/targets/ramips/mt7620/${{ env.DIR_SDK_MT7620 }}.tar.zst
+        tar -xf ${{ env.DIR_SDK_MT7620 }}.tar.zst
+        cp -r $PWD/n2n/packages/openwrt $PWD/${{ env.DIR_SDK_MT7620 }}/package/n2n
 
-        wget -q https://downloads.openwrt.org/releases/${{ env.OP_VER }}/targets/ramips/mt7621/$DIR_SDK_MT7621.tar.xz
-        tar -xf ${{ env.DIR_SDK_MT7621 }}.tar.xz
-        ln -sf $PWD/n2n/packages/openwrt $PWD/${{ env.DIR_SDK_MT7621 }}/package/n2n
+        wget -q https://downloads.openwrt.org/releases/${{ env.OP_VER }}/targets/ramips/mt7621/${{ env.DIR_SDK_MT7621 }}.tar.zst
+        tar -xf ${{ env.DIR_SDK_MT7621 }}.tar.zst
+        cp -r $PWD/n2n/packages/openwrt $PWD/${{ env.DIR_SDK_MT7621 }}/package/n2n
 
-        wget -q https://downloads.openwrt.org/releases/${{ env.OP_VER }}/targets/ath79/tiny/$DIR_SDK_ATH79.tar.xz
-        tar -xf ${{ env.DIR_SDK_ATH79 }}.tar.xz
-        ln -sf $PWD/n2n/packages/openwrt $PWD/${{ env.DIR_SDK_ATH79 }}/package/n2n
+        wget -q https://downloads.openwrt.org/releases/${{ env.OP_VER }}/targets/ath79/tiny/${{ env.DIR_SDK_ATH79 }}.tar.zst
+        tar -xf ${{ env.DIR_SDK_ATH79 }}.tar.zst
+        cp -r $PWD/n2n/packages/openwrt $PWD/${{ env.DIR_SDK_ATH79 }}/package/n2n
         ls -al
     - name: Build ipk
       env:
@@ -92,11 +92,11 @@ jobs:
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        tag_name: package_${{ env.OP_VER }}_${{ steps.commit.outputs.short }}
-        release_name: package_${{ env.OP_VER }}_${{ steps.commit.outputs.short }}
+        tag_name: package_n2n_${{ env.OP_VER }}_${{ steps.commit.outputs.short }}
+        release_name: package_n2n_${{ env.OP_VER }}_${{ steps.commit.outputs.short }}
         draft: false
         prerelease: false
-    - name: Upload Release Asset
+    - name: Upload Release Asset MT_FILOGIC
       uses: actions/upload-release-asset@main
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -105,7 +105,7 @@ jobs:
         asset_path: n2n-edge_${{ env.N2N_REPO_BRANCH }}_${{ env.ARCH_MT_FILOGIC }}_${{ env.OP_VER }}_${{ steps.commit.outputs.short }}.ipk
         asset_name: n2n-edge_${{ env.N2N_REPO_BRANCH }}_${{ env.ARCH_MT_FILOGIC }}_${{ env.OP_VER }}_${{ steps.commit.outputs.short }}.ipk
         asset_content_type: application/ipk
-    - name: Upload Release Asset
+    - name: Upload Release Asset MT7620
       uses: actions/upload-release-asset@main
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -114,7 +114,7 @@ jobs:
         asset_path: n2n-edge_${{ env.N2N_REPO_BRANCH }}_${{ env.ARCH_MT7620 }}_${{ env.OP_VER }}_${{ steps.commit.outputs.short }}.ipk
         asset_name: n2n-edge_${{ env.N2N_REPO_BRANCH }}_${{ env.ARCH_MT7620 }}_${{ env.OP_VER }}_${{ steps.commit.outputs.short }}.ipk
         asset_content_type: application/ipk
-    - name: Upload Release Asset
+    - name: Upload Release Asset MT7621
       uses: actions/upload-release-asset@main
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -123,7 +123,7 @@ jobs:
         asset_path: n2n-edge_${{ env.N2N_REPO_BRANCH }}_${{ env.ARCH_MT7621 }}_${{ env.OP_VER }}_${{ steps.commit.outputs.short }}.ipk
         asset_name: n2n-edge_${{ env.N2N_REPO_BRANCH }}_${{ env.ARCH_MT7621 }}_${{ env.OP_VER }}_${{ steps.commit.outputs.short }}.ipk
         asset_content_type: application/ipk
-    - name: Upload Release Asset
+    - name: Upload Release Asset ATH79
       uses: actions/upload-release-asset@main
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

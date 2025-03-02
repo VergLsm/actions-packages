@@ -1,0 +1,141 @@
+name: Build N3N IPK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - op-packages
+
+env:
+  OP_VER: 24.10.0
+  N3N_REPO_BRANCH: 3.4.4
+  GCC_VERSION: 13.3.0
+  ARCH_MT_FILOGIC: mediatek-filogic
+  ARCH_MT7620: ramips-mt7620
+  ARCH_MT7621: ramips-mt7621
+  ARCH_ATH79:  ath79-tiny
+
+jobs:
+  build_packages:
+    runs-on: ubuntu-latest
+    if: github.event.repository.owner.id == github.event.sender.id
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@main
+    - id: commit
+      uses: pr-mpt/actions-commit-hash@v2
+    - name: Check commit ids
+      run: |
+        echo "SHORT COMMIT ID:" ${{ steps.commit.outputs.short }}
+    - name: Clone source code
+      run: |
+        df -hT $PWD
+        git clone -b ${{ env.N3N_REPO_BRANCH }} --depth=1 https://github.com/n42n/n3n.git n3n
+        N2N_PKG_VERSION=$(n3n/scripts/version.sh)
+        export N2N_PKG_VERSION
+        echo $N2N_PKG_VERSION
+    - name: Download sdk
+      env:
+        DIR_SDK_MT_FILOGIC: openwrt-sdk-${{ env.OP_VER }}-${{ env.ARCH_MT_FILOGIC }}_gcc-${{ env.GCC_VERSION }}_musl.Linux-x86_64
+        DIR_SDK_MT7620: openwrt-sdk-${{ env.OP_VER }}-${{ env.ARCH_MT7620 }}_gcc-${{ env.GCC_VERSION }}_musl.Linux-x86_64
+        DIR_SDK_MT7621: openwrt-sdk-${{ env.OP_VER }}-${{ env.ARCH_MT7621 }}_gcc-${{ env.GCC_VERSION }}_musl.Linux-x86_64
+        DIR_SDK_ATH79:  openwrt-sdk-${{ env.OP_VER }}-${{ env.ARCH_ATH79 }}_gcc-${{ env.GCC_VERSION }}_musl.Linux-x86_64
+      run: |
+        df -hT $PWD
+        wget -q https://downloads.openwrt.org/releases/${{ env.OP_VER }}/targets/mediatek/filogic/${{ env.DIR_SDK_MT_FILOGIC }}.tar.zst
+        tar -xf ${{ env.DIR_SDK_MT_FILOGIC }}.tar.zst
+        cp -r $PWD/n3n/packages/openwrt $PWD/${{ env.DIR_SDK_MT_FILOGIC }}/package/n3n
+
+        wget -q https://downloads.openwrt.org/releases/${{ env.OP_VER }}/targets/ramips/mt7620/${{ env.DIR_SDK_MT7620 }}.tar.zst
+        tar -xf ${{ env.DIR_SDK_MT7620 }}.tar.zst
+        cp -r $PWD/n3n/packages/openwrt $PWD/${{ env.DIR_SDK_MT7620 }}/package/n3n
+
+        wget -q https://downloads.openwrt.org/releases/${{ env.OP_VER }}/targets/ramips/mt7621/${{ env.DIR_SDK_MT7621 }}.tar.zst
+        tar -xf ${{ env.DIR_SDK_MT7621 }}.tar.zst
+        cp -r $PWD/n3n/packages/openwrt $PWD/${{ env.DIR_SDK_MT7621 }}/package/n3n
+
+        wget -q https://downloads.openwrt.org/releases/${{ env.OP_VER }}/targets/ath79/tiny/${{ env.DIR_SDK_ATH79 }}.tar.zst
+        tar -xf ${{ env.DIR_SDK_ATH79 }}.tar.zst
+        cp -r $PWD/n3n/packages/openwrt $PWD/${{ env.DIR_SDK_ATH79 }}/package/n3n
+        ls -al
+    - name: Build ipk
+      env:
+        DIR_SDK_MT_FILOGIC: openwrt-sdk-${{ env.OP_VER }}-${{ env.ARCH_MT_FILOGIC }}_gcc-${{ env.GCC_VERSION }}_musl.Linux-x86_64
+        DIR_SDK_MT7620: openwrt-sdk-${{ env.OP_VER }}-${{ env.ARCH_MT7620 }}_gcc-${{ env.GCC_VERSION }}_musl.Linux-x86_64
+        DIR_SDK_MT7621: openwrt-sdk-${{ env.OP_VER }}-${{ env.ARCH_MT7621 }}_gcc-${{ env.GCC_VERSION }}_musl.Linux-x86_64
+        DIR_SDK_ATH79:  openwrt-sdk-${{ env.OP_VER }}-${{ env.ARCH_ATH79 }}_gcc-${{ env.GCC_VERSION }}_musl.Linux-x86_64
+      run: |
+        cd ${{ env.DIR_SDK_MT_FILOGIC }}
+        make defconfig
+        make package/n3n/prepare USE_SOURCE_DIR=$(realpath ../n3n) V=s
+        make package/n3n/compile V=s -j$(nproc)
+        cp $(find . -name n3n-edge_*.ipk) ../n3n-edge_${{ env.N3N_REPO_BRANCH }}_${{ env.ARCH_MT_FILOGIC }}_${{ env.OP_VER }}_${{ steps.commit.outputs.short }}.ipk
+        cd ..
+        echo ===============================
+        cd ${{ env.DIR_SDK_MT7620 }}
+        make defconfig
+        make package/n3n/prepare USE_SOURCE_DIR=$(realpath ../n3n) V=s
+        make package/n3n/compile V=s -j$(nproc)
+        cp $(find . -name n3n-edge_*.ipk) ../n3n-edge_${{ env.N3N_REPO_BRANCH }}_${{ env.ARCH_MT7620 }}_${{ env.OP_VER }}_${{ steps.commit.outputs.short }}.ipk
+        cd ..
+        echo ===============================
+        cd ${{ env.DIR_SDK_MT7621 }}
+        make defconfig
+        make package/n3n/prepare USE_SOURCE_DIR=$(realpath ../n3n) V=s
+        make package/n3n/compile V=s -j$(nproc)
+        cp $(find . -name n3n-edge_*.ipk) ../n3n-edge_${{ env.N3N_REPO_BRANCH }}_${{ env.ARCH_MT7621 }}_${{ env.OP_VER }}_${{ steps.commit.outputs.short }}.ipk
+        cd ..
+        echo ===============================
+        cd ${{ env.DIR_SDK_ATH79 }}
+        make defconfig
+        make package/n3n/prepare USE_SOURCE_DIR=$(realpath ../n3n) V=s
+        make package/n3n/compile V=s -j$(nproc)
+        cp $(find . -name n3n-edge_*.ipk) ../n3n-edge_${{ env.N3N_REPO_BRANCH }}_${{ env.ARCH_ATH79 }}_${{ env.OP_VER }}_${{ steps.commit.outputs.short }}.ipk
+        cd ..
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@main
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: package_n3n_${{ env.OP_VER }}_${{ steps.commit.outputs.short }}
+        release_name: package_n3n_${{ env.OP_VER }}_${{ steps.commit.outputs.short }}
+        draft: false
+        prerelease: false
+    - name: Upload Release Asset
+      uses: actions/upload-release-asset@main
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
+        asset_path: n3n-edge_${{ env.N3N_REPO_BRANCH }}_${{ env.ARCH_MT_FILOGIC }}_${{ env.OP_VER }}_${{ steps.commit.outputs.short }}.ipk
+        asset_name: n3n-edge_${{ env.N3N_REPO_BRANCH }}_${{ env.ARCH_MT_FILOGIC }}_${{ env.OP_VER }}_${{ steps.commit.outputs.short }}.ipk
+        asset_content_type: application/ipk
+    - name: Upload Release Asset MT7620
+      uses: actions/upload-release-asset@main
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: n3n-edge_${{ env.N3N_REPO_BRANCH }}_${{ env.ARCH_MT7620 }}_${{ env.OP_VER }}_${{ steps.commit.outputs.short }}.ipk
+        asset_name: n3n-edge_${{ env.N3N_REPO_BRANCH }}_${{ env.ARCH_MT7620 }}_${{ env.OP_VER }}_${{ steps.commit.outputs.short }}.ipk
+        asset_content_type: application/ipk
+    - name: Upload Release Asset MT7621
+      uses: actions/upload-release-asset@main
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: n3n-edge_${{ env.N3N_REPO_BRANCH }}_${{ env.ARCH_MT7621 }}_${{ env.OP_VER }}_${{ steps.commit.outputs.short }}.ipk
+        asset_name: n3n-edge_${{ env.N3N_REPO_BRANCH }}_${{ env.ARCH_MT7621 }}_${{ env.OP_VER }}_${{ steps.commit.outputs.short }}.ipk
+        asset_content_type: application/ipk
+    - name: Upload Release Asset ATH79
+      uses: actions/upload-release-asset@main
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: n3n-edge_${{ env.N3N_REPO_BRANCH }}_${{ env.ARCH_ATH79 }}_${{ env.OP_VER }}_${{ steps.commit.outputs.short }}.ipk
+        asset_name: n3n-edge_${{ env.N3N_REPO_BRANCH }}_${{ env.ARCH_ATH79 }}_${{ env.OP_VER }}_${{ steps.commit.outputs.short }}.ipk
+        asset_content_type: application/ipk

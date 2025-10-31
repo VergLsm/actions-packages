@@ -7,13 +7,12 @@ on:
       - op-packages
 
 env:
-  OP_VER: 24.10.0
+  OP_VER: 24.10.4
   N2N_REPO_BRANCH: 3.1.1
   GCC_VERSION: 13.3.0
   ARCH_MT_FILOGIC: mediatek-filogic
   ARCH_MT7620: ramips-mt7620
   ARCH_MT7621: ramips-mt7621
-  ARCH_ATH79:  ath79-tiny
 
 jobs:
   build_packages:
@@ -37,7 +36,6 @@ jobs:
         DIR_SDK_MT_FILOGIC: openwrt-sdk-${{ env.OP_VER }}-${{ env.ARCH_MT_FILOGIC }}_gcc-${{ env.GCC_VERSION }}_musl.Linux-x86_64
         DIR_SDK_MT7620: openwrt-sdk-${{ env.OP_VER }}-${{ env.ARCH_MT7620 }}_gcc-${{ env.GCC_VERSION }}_musl.Linux-x86_64
         DIR_SDK_MT7621: openwrt-sdk-${{ env.OP_VER }}-${{ env.ARCH_MT7621 }}_gcc-${{ env.GCC_VERSION }}_musl.Linux-x86_64
-        DIR_SDK_ATH79:  openwrt-sdk-${{ env.OP_VER }}-${{ env.ARCH_ATH79 }}_gcc-${{ env.GCC_VERSION }}_musl.Linux-x86_64
       run: |
         df -hT $PWD
         wget -q https://downloads.openwrt.org/releases/${{ env.OP_VER }}/targets/mediatek/filogic/${{ env.DIR_SDK_MT_FILOGIC }}.tar.zst
@@ -51,17 +49,12 @@ jobs:
         wget -q https://downloads.openwrt.org/releases/${{ env.OP_VER }}/targets/ramips/mt7621/${{ env.DIR_SDK_MT7621 }}.tar.zst
         tar -xf ${{ env.DIR_SDK_MT7621 }}.tar.zst
         cp -r $PWD/n2n/packages/openwrt $PWD/${{ env.DIR_SDK_MT7621 }}/package/n2n
-
-        wget -q https://downloads.openwrt.org/releases/${{ env.OP_VER }}/targets/ath79/tiny/${{ env.DIR_SDK_ATH79 }}.tar.zst
-        tar -xf ${{ env.DIR_SDK_ATH79 }}.tar.zst
-        cp -r $PWD/n2n/packages/openwrt $PWD/${{ env.DIR_SDK_ATH79 }}/package/n2n
         ls -al
     - name: Build ipk
       env:
         DIR_SDK_MT_FILOGIC: openwrt-sdk-${{ env.OP_VER }}-${{ env.ARCH_MT_FILOGIC }}_gcc-${{ env.GCC_VERSION }}_musl.Linux-x86_64
         DIR_SDK_MT7620: openwrt-sdk-${{ env.OP_VER }}-${{ env.ARCH_MT7620 }}_gcc-${{ env.GCC_VERSION }}_musl.Linux-x86_64
         DIR_SDK_MT7621: openwrt-sdk-${{ env.OP_VER }}-${{ env.ARCH_MT7621 }}_gcc-${{ env.GCC_VERSION }}_musl.Linux-x86_64
-        DIR_SDK_ATH79:  openwrt-sdk-${{ env.OP_VER }}-${{ env.ARCH_ATH79 }}_gcc-${{ env.GCC_VERSION }}_musl.Linux-x86_64
       run: |
         cd ${{ env.DIR_SDK_MT_FILOGIC }}
         make defconfig
@@ -79,12 +72,6 @@ jobs:
         make defconfig
         make package/n2n/compile V=s -j$(nproc)
         cp $(find . -name n2n-edge_*.ipk) ../n2n-edge_${{ env.N2N_REPO_BRANCH }}_${{ env.ARCH_MT7621 }}_${{ env.OP_VER }}_${{ steps.commit.outputs.short }}.ipk
-        cd ..
-        echo ===============================
-        cd ${{ env.DIR_SDK_ATH79 }}
-        make defconfig
-        make package/n2n/compile V=s -j$(nproc)
-        cp $(find . -name n2n-edge_*.ipk) ../n2n-edge_${{ env.N2N_REPO_BRANCH }}_${{ env.ARCH_ATH79 }}_${{ env.OP_VER }}_${{ steps.commit.outputs.short }}.ipk
         cd ..
     - name: Create Release
       id: create_release
@@ -122,13 +109,4 @@ jobs:
         upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
         asset_path: n2n-edge_${{ env.N2N_REPO_BRANCH }}_${{ env.ARCH_MT7621 }}_${{ env.OP_VER }}_${{ steps.commit.outputs.short }}.ipk
         asset_name: n2n-edge_${{ env.N2N_REPO_BRANCH }}_${{ env.ARCH_MT7621 }}_${{ env.OP_VER }}_${{ steps.commit.outputs.short }}.ipk
-        asset_content_type: application/ipk
-    - name: Upload Release Asset ATH79
-      uses: actions/upload-release-asset@main
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }} # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
-        asset_path: n2n-edge_${{ env.N2N_REPO_BRANCH }}_${{ env.ARCH_ATH79 }}_${{ env.OP_VER }}_${{ steps.commit.outputs.short }}.ipk
-        asset_name: n2n-edge_${{ env.N2N_REPO_BRANCH }}_${{ env.ARCH_ATH79 }}_${{ env.OP_VER }}_${{ steps.commit.outputs.short }}.ipk
         asset_content_type: application/ipk

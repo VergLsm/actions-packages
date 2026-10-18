@@ -7,9 +7,9 @@ on:
       - op-packages
 
 env:
-  OP_VER: 24.10.4
+  OP_VER: 25.12.6
   N2N_REPO_BRANCH: 3.1.1
-  GCC_VERSION: 13.3.0
+  GCC_VERSION: 14.3.0
   ARCH_MT_FILOGIC: mediatek-filogic
   ARCH_MT7620: ramips-mt7620
   ARCH_MT7621: ramips-mt7621
